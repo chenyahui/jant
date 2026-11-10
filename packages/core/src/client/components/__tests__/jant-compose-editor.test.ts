@@ -343,6 +343,7 @@ const labels: ComposeLabels = {
   editing: "Editing",
   composeDialogLabel: "Compose",
   slashHint: "Type / for commands",
+  highlight: "Highlight",
   tableControls: {
     toolbarLabel: "Table controls",
     addRowAbove: "Add row above",
@@ -1354,6 +1355,58 @@ describe("JantComposeEditor", () => {
     expect(fallback?.textContent).toContain("Image unavailable");
     expect(el.querySelector(".compose-attachment-remove")).not.toBeNull();
     expect(el.querySelector(".compose-attachment-img")).toBeNull();
+  });
+
+  // A clip uploaded through the API can arrive without a poster; opening its
+  // post is the editor's chance to have the bridge make one.
+  it("asks for posters for the saved videos that have none", async () => {
+    const el = await createElement("note");
+    const missing = vi.fn();
+    el.addEventListener("jant:video-posters-missing", (event) =>
+      missing((event as CustomEvent).detail),
+    );
+
+    el.populate({
+      format: "note",
+      media: [
+        {
+          id: "m1",
+          clientId: "c1",
+          previewUrl: "https://media.example/no-poster.mp4",
+          mimeType: "video/mp4",
+          persisted: true,
+        },
+        {
+          id: "m2",
+          clientId: "c2",
+          previewUrl: "https://media.example/has-poster.mp4",
+          posterUrl: "https://media.example/poster.webp",
+          mimeType: "video/mp4",
+          persisted: true,
+        },
+        {
+          id: "m3",
+          clientId: "c3",
+          previewUrl: "/saved.png",
+          mimeType: "image/png",
+          persisted: true,
+        },
+      ],
+      attachmentOrder: ["c1", "c2", "c3"],
+    });
+    await el.updateComplete;
+    await Promise.resolve();
+
+    expect(missing).toHaveBeenCalledTimes(1);
+    expect(missing).toHaveBeenCalledWith({
+      attachments: [
+        {
+          clientId: "c1",
+          mediaId: "m1",
+          url: "https://media.example/no-poster.mp4",
+        },
+      ],
+    });
   });
 
   // Saving the edit deletes a saved attachment the author removed; the bridge

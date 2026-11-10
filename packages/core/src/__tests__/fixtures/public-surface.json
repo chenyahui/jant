@@ -175,6 +175,8 @@
         "off"
       ],
       "DISCOVER_PING_URL": [],
+      "GITHUB_APP_CLIENT_ID": [],
+      "GITHUB_APP_CLIENT_SECRET": [],
       "GITHUB_APP_ID": [],
       "GITHUB_APP_PRIVATE_KEY": [],
       "GITHUB_APP_SLUG": [],
@@ -229,6 +231,8 @@
       "SITE_ORIGIN": [],
       "SITE_PATH_PREFIX": [],
       "SLUG_ID_LENGTH": [],
+      "STATS_DAILY_LIMIT": [],
+      "STATS_ENABLED": [],
       "STORAGE_DRIVER": [
         "local",
         "r2",
@@ -848,6 +852,7 @@
       "PUT /api/collections/directory-items/:id",
       "PUT /api/collections/directory-items/:id/move",
       "PUT /api/media/:id",
+      "PUT /api/media/:id/poster",
       "PUT /api/nav-items/:id",
       "PUT /api/nav-items/:id/move",
       "PUT /api/posts/:id",
@@ -1228,6 +1233,10 @@
         "cursor",
         "limit",
         "mimePrefix"
+      ],
+      "jant_media_set_poster": [
+        "id",
+        "posterBase64"
       ],
       "jant_media_update": [
         "alt",

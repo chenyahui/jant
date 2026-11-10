@@ -535,7 +535,10 @@
     opacity: 0.5;
   }
 
+  /* The current page's name is the one piece that can be long (a post's
+     derived title); it takes the rest of the line and is cut, never wrapped. */
   .dash-breadcrumb-current {
+    @apply flex-1 min-w-0 truncate;
     color: var(--color-foreground);
     font-weight: var(--fw-medium);
   }
@@ -583,10 +586,21 @@
     gap: 0.35rem;
   }
 
+  /*
+   * The row's icon lines up with the page heading and the section labels.
+   * Its hover and focus surface reaches `--settings-directory-item-bleed`
+   * into the frame's start gutter, which is there for things that hang
+   * outside the column, so the icon never sits on the surface's edge. The
+   * end gutter is only 5% on phones, so the end side stays in the column.
+   */
   .settings-directory-item {
-    @apply flex items-center w-full text-left;
+    --settings-directory-item-bleed: 0.85rem;
+    @apply flex items-center text-left;
+    width: calc(100% + var(--settings-directory-item-bleed));
+    margin-inline-start: calc(-1 * var(--settings-directory-item-bleed));
     gap: 0.68rem;
-    padding: 0.85rem 0.6rem 0.85rem 0;
+    padding-block: 0.85rem;
+    padding-inline: var(--settings-directory-item-bleed) 0.6rem;
     border: none;
     border-radius: 0.85rem;
     background: transparent;
@@ -921,8 +935,10 @@
   }
   @media (max-width: 699px) {
     .settings-directory-item {
+      --settings-directory-item-bleed: 0.75rem;
       gap: 0.62rem;
-      padding: 0.78rem 0.52rem 0.78rem 0;
+      padding-block: 0.78rem;
+      padding-inline-end: 0.52rem;
       border-radius: 0.8rem;
     }
 
@@ -1618,5 +1634,228 @@
 
   .skel-section-lg {
     min-height: 300px;
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* Stats page: a window switch, a bar chart, two lists, one switch         */
+  /* ---------------------------------------------------------------------- */
+
+  .settings-stats {
+    @apply flex flex-col;
+    gap: 2rem;
+    max-width: var(--form-max-width);
+  }
+
+  .settings-stats-header {
+    @apply flex flex-wrap items-baseline justify-between;
+    gap: 0.75rem 1.5rem;
+  }
+
+  .settings-stats-title {
+    @apply flex flex-wrap items-baseline;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: var(--type-title);
+    font-weight: var(--fw-semibold);
+    line-height: var(--type-heading-leading);
+  }
+
+  /* A page's name on its own stats page: at most two lines, then cut. An
+     untitled note is named by its opening words, which can run long. */
+  .settings-stats-title-name {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+  }
+
+  .settings-stats-windows {
+    @apply flex;
+    gap: 0.25rem;
+    font-family: var(--font-ui);
+    font-size: var(--type-sm);
+  }
+
+  .settings-stats-window {
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    color: var(--site-text-secondary);
+    text-decoration: none;
+    transition:
+      color 150ms ease,
+      background-color 150ms ease;
+  }
+
+  .settings-stats-window:hover {
+    color: var(--foreground);
+  }
+
+  .settings-stats-window[aria-current="page"] {
+    color: var(--foreground);
+    background: var(--muted);
+  }
+
+  .settings-stats-total {
+    margin: 0;
+    font-family: var(--font-ui);
+    font-size: var(--type-subtitle);
+    font-weight: var(--fw-medium);
+  }
+
+  .settings-stats-figure {
+    margin: 0;
+    color: var(--primary);
+  }
+
+  /* One slot per point, its bar 70% of the slot's width. The slot is the
+     hover target, so a short bar is as easy to point at as a tall one, and
+     `padding-top` keeps room for the label above the tallest bar. */
+  .settings-stats-chart {
+    @apply flex items-end;
+    box-sizing: border-box;
+    width: 100%;
+    height: 10.5rem;
+    padding-top: 1.5rem;
+  }
+
+  .settings-stats-slot {
+    @apply relative flex items-end;
+    flex: 1 1 0;
+    min-width: 0;
+    height: 100%;
+  }
+
+  .settings-stats-bar {
+    display: block;
+    width: 70%;
+    height: var(--stats-height, 0%);
+    margin: 0 auto;
+    background: currentColor;
+    opacity: 0.8;
+    transition: opacity 150ms ease;
+  }
+
+  .settings-stats-slot:hover .settings-stats-bar {
+    opacity: 1;
+  }
+
+  /* The point and its count, above the bar of the hovered slot. The first
+     and last slots keep theirs inside the chart. */
+  .settings-stats-slot[data-label]:hover::after {
+    content: attr(data-label);
+    position: absolute;
+    left: 50%;
+    bottom: calc(var(--stats-height, 0%) + 0.3rem);
+    z-index: 1;
+    transform: translateX(-50%);
+    padding: 0.1rem 0.4rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm, 0.375rem);
+    background: var(--site-page-bg);
+    font-family: var(--font-ui);
+    font-size: var(--type-xs);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.4;
+    white-space: nowrap;
+    color: var(--foreground);
+    pointer-events: none;
+  }
+
+  .settings-stats-slot:first-child:hover::after {
+    left: 0;
+    transform: none;
+  }
+
+  .settings-stats-slot:last-child:hover::after {
+    left: auto;
+    right: 0;
+    transform: none;
+  }
+
+  /* The baseline under the bars. It starts where the record does: the chart
+     sets `--stats-start` to the share of the window that was never counted. */
+  .settings-stats-axis {
+    @apply flex justify-between;
+    margin-left: var(--stats-start, 0%);
+    padding-top: 0.35rem;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-ui);
+    font-size: var(--type-xs);
+    color: var(--site-text-secondary);
+  }
+
+  .settings-stats-axis > span {
+    white-space: nowrap;
+  }
+
+  /* Today's date alone, under the end of the baseline. */
+  .settings-stats-axis-single {
+    @apply justify-end;
+  }
+
+  .settings-stats-section {
+    @apply flex flex-col;
+    gap: 0.5rem;
+  }
+
+  .settings-stats-heading {
+    margin: 0;
+    font-family: var(--font-ui);
+    font-size: var(--type-xs);
+    font-weight: var(--fw-medium);
+    letter-spacing: 0.02em;
+    color: var(--site-text-secondary);
+  }
+
+  .settings-stats-list {
+    @apply flex flex-col;
+    gap: 0.125rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* A ranked row. The bar behind it is its share of the window's total,
+     set by the row as `--stats-share`; the text sits on top of it. */
+  .settings-stats-row {
+    @apply flex items-center;
+    gap: 0.75rem;
+    padding: 0.45rem 0.625rem;
+    border-radius: var(--radius-sm, 0.375rem);
+    background: linear-gradient(
+      to right,
+      var(--muted) var(--stats-share, 0%),
+      transparent var(--stats-share, 0%)
+    );
+  }
+
+  .settings-stats-rank {
+    flex: none;
+    min-width: 1.25rem;
+    font-family: var(--font-ui);
+    font-size: var(--type-sm);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: var(--site-text-secondary);
+  }
+
+  .settings-stats-label {
+    @apply flex-1 min-w-0 truncate;
+  }
+
+  .settings-stats-link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .settings-stats-link:hover {
+    text-decoration: underline;
+  }
+
+  .settings-stats-count {
+    font-family: var(--font-ui);
+    font-variant-numeric: tabular-nums;
+    color: var(--site-text-secondary);
   }
 }
