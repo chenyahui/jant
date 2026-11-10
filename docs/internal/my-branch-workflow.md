@@ -50,14 +50,17 @@ conflicts by editing directly on `my-release`.
 
 ## Sync the official project
 
+Sync the remote fork through GitHub's **Sync fork** action or the CLI, then
+fast-forward the local mirror:
+
 ```bash
+gh repo sync chenyahui/jant --branch main
 git fetch upstream
 git switch main
 git merge --ff-only upstream/main
-git push origin main
 ```
 
-If the fast-forward fails, stop and inspect the divergence. Do not create a
+If syncing or the fast-forward fails, stop and inspect the divergence. Do not create a
 merge commit, rebase fork work onto `main`, or force-push to hide the divergence.
 
 Bring the synchronized `main` into `my-release` through an integration branch so
@@ -78,17 +81,19 @@ Merge that branch into `my-release` using the completed-work process above.
 ## Scope of the rules
 
 This document defines the fork's branch convention. GitHub protection is a
-separate repository setting. The intended protection is:
+separate repository setting. These protections are enabled:
 
 - `main`: lock the branch and allow fork syncing from `jant-me/jant`.
 - `my-release`: require a PR, apply the restriction to administrators, and
-  prohibit force pushes and deletion. No additional approving reviewer is
-  required for this single-maintainer fork.
+  prohibit force pushes and deletion. Only merge commits are allowed. No
+  additional approving reviewer is required for this single-maintainer fork.
 
-Protection setup is pending verification; this document alone does not block
-direct pushes. After `main` is locked, synchronize the remote with GitHub's
-**Sync fork** action; a direct `git push origin main` will be rejected. The local
-fast-forward commands above remain useful for updating the local mirror.
+The `main` branch uses a classic branch protection rule with fork syncing
+enabled. The `my-release` branch uses the active
+[PR-only ruleset](https://github.com/chenyahui/jant/settings/rules/26936942),
+with no bypass actors. Direct pushes to either branch are blocked; synchronize
+`main` through the fork sync flow and integrate work into `my-release` through
+PRs.
 
 The upstream contribution and package release instructions still describe the
 official project's workflow. In this fork, local work targets `my-release`.
