@@ -233,6 +233,12 @@ mise run check-docker-smoke # Build the Docker image and run the Compose quick s
 
 ## Development Workflow
 
+For work in the `chenyahui/jant` fork, follow the
+[fork branch workflow](docs/internal/branch-workflow.md): develop on work branches
+and merge into `my-release`; keep `main` synchronized with the official upstream.
+The `main` targets in the contribution and release steps below refer to the
+official `jant-me/jant` repository.
+
 ### Making Changes
 
 1. **Create a branch:**
