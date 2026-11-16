@@ -1,0 +1,27 @@
+name: jant-test
+
+services:
+  jant-migrate:
+    image: ${IMAGE:?Set IMAGE to the published digest}
+    env_file: .env
+    command: ["jant", "migrate"]
+    volumes:
+      - ./data:/var/lib/jant
+    restart: "no"
+
+  jant:
+    image: ${IMAGE:?Set IMAGE to the published digest}
+    env_file: .env
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./data:/var/lib/jant
+    restart: unless-stopped
+    depends_on:
+      jant-migrate:
+        condition: service_completed_successfully
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
