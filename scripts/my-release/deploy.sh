@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
-# Installed root-owned at /usr/local/sbin/jant-test-deploy. Read a short-lived
-# GHCR token from stdin; never save it in the site's environment or logs.
+# Installed root-owned at /usr/local/sbin/jant-test-deploy. Read the TCR
+# username and password from stdin and keep the login in a temporary config.
 set -euo pipefail
 umask 077
 
 image="${1:-}"
-if [[ $# -ne 1 || ! "$image" =~ ^ghcr\.io/chenyahui/jant-my-release@sha256:[a-f0-9]{64}$ ]]; then
-  echo "Usage: jant-test-deploy ghcr.io/chenyahui/jant-my-release@sha256:<digest>" >&2
+if [[ $# -ne 1 || ! "$image" =~ ^ccr\.ccs\.tencentyun\.com/chenyahui/jant-my-release@sha256:[a-f0-9]{64}$ ]]; then
+  echo "Usage: jant-test-deploy ccr.ccs.tencentyun.com/chenyahui/jant-my-release@sha256:<digest>" >&2
+  exit 1
+fi
+if ! IFS= read -r registry_username || [[ ! "$registry_username" =~ ^[0-9]+$ ]]; then
+  echo "Expected a TCR account ID on the first line of stdin." >&2
   exit 1
 fi
 
@@ -30,7 +34,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-docker login ghcr.io --username chenyahui --password-stdin
+docker login ccr.ccs.tencentyun.com --username "$registry_username" --password-stdin
 docker compose pull
 
 # Stop writes before copying SQLite, its WAL, and local media together. Keep
