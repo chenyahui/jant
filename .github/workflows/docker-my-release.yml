@@ -1,12 +1,10 @@
 name: Publish and deploy my-release
 
 on:
-  push:
-    branches: [my-release]
   workflow_dispatch:
 
 concurrency:
-  group: docker-my-release
+  group: ${{ github.ref == 'refs/heads/my-release' && 'docker-my-release' || 'docker-my-release-other-refs' }}
   cancel-in-progress: false
 
 permissions:
