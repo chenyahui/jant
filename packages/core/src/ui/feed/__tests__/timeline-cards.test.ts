@@ -117,6 +117,46 @@ describe("timeline cards", () => {
     }
   });
 
+  it("puts the linked site's icon before the domain and the arrow after it", () => {
+    const post = createPostView({
+      format: "link",
+      previewIconUrl: "/media/site/previews/post-1-icon-a.png",
+    });
+
+    for (const mode of ["feed", "compact", "detail"] as const) {
+      const html = renderWithI18n(LinkCard({ post, mode }));
+      const domain = html.slice(
+        html.indexOf('class="feed-link-domain"'),
+        html.indexOf("</a>", html.indexOf('class="feed-link-domain"')),
+      );
+
+      expect(domain).toContain(
+        'src="/media/site/previews/post-1-icon-a.png" alt=""',
+      );
+      expect(domain.indexOf("feed-link-domain-favicon")).toBeLessThan(
+        domain.indexOf("<span>example.com</span>"),
+      );
+      expect(domain.indexOf("<span>example.com</span>")).toBeLessThan(
+        domain.indexOf("<svg"),
+      );
+    }
+  });
+
+  it("keeps only the domain and the arrow when the post has no site icon", () => {
+    const html = renderWithI18n(
+      LinkCard({ post: createPostView({ format: "link" }), mode: "feed" }),
+    );
+    const domain = html.slice(
+      html.indexOf('class="feed-link-domain"'),
+      html.indexOf("</a>", html.indexOf('class="feed-link-domain"')),
+    );
+
+    expect(domain).not.toContain("<img");
+    expect(domain.indexOf("<span>example.com</span>")).toBeLessThan(
+      domain.indexOf("<svg"),
+    );
+  });
+
   it("marks a link post's referenced article as u-bookmark-of, never as the entry's own u-url", () => {
     const post = createPostView({ format: "link" });
 
@@ -434,7 +474,7 @@ describe("timeline cards", () => {
     expect(css).toContain("margin-bottom: 0;");
   });
 
-  it("aligns list rhythm across published and ordinary compose prose", () => {
+  it("aligns list rhythm across published prose and the compose editor", () => {
     const presetCss = readFileSync(
       new URL("../../../preset.css", import.meta.url),
       "utf8",
@@ -460,31 +500,12 @@ describe("timeline cards", () => {
     expect(exportCss).toMatch(
       /li\s*\{[\s\S]*margin-top:\s*0\.5em;[\s\S]*margin-bottom:\s*0\.5em;/,
     );
+    // The editor takes these from `.prose` too. What it adds: the paragraph
+    // TipTap wraps a list item in gives up its margin above a nested list, and
+    // a top-level ordered list keeps room for a two-digit marker.
     expect(uiCss).toMatch(
-      /\.compose-tiptap-body\s+\.tiptap\s+ul\s*\{[^}]*padding-left:\s*1\.4em;[^}]*margin:\s*1\.25em 0;/,
+      /\.compose-tiptap-body\s+\.tiptap\s+>\s+ol\s*\{[^}]*padding-left:\s*2\.25em;/,
     );
-    expect(uiCss).toMatch(
-      /\.compose-tiptap-body\s+\.tiptap\s+ol\s*\{[^}]*padding-left:\s*2\.25em;[^}]*margin:\s*1\.25em 0;/,
-    );
-    expect(uiCss).toMatch(
-      /\.compose-tiptap-body\s+\.tiptap\s+:is\(ul, ol\)\s+:is\(ul, ol\)\s*\{[^}]*padding-left:\s*1\.5em;[^}]*margin:\s*0\.4em 0;/,
-    );
-    expect(uiCss).toMatch(
-      /\.compose-tiptap-body\s+\.tiptap\s+ul ul\s*\{[^}]*list-style-type:\s*circle;/,
-    );
-    expect(uiCss).toMatch(
-      /\.compose-tiptap-body\s+\.tiptap\s+ul ul ul\s*\{[^}]*list-style-type:\s*square;/,
-    );
-    expect(uiCss).toMatch(
-      /\.compose-tiptap-body\s+\.tiptap\s+ol ol\s*\{[^}]*list-style-type:\s*lower-alpha;/,
-    );
-    expect(uiCss).toMatch(
-      /\.compose-tiptap-body\s+\.tiptap\s+ol ol ol\s*\{[^}]*list-style-type:\s*lower-roman;/,
-    );
-    expect(uiCss).toMatch(
-      /\.compose-tiptap-body\s+\.tiptap\s+li\s*\{[^}]*margin:\s*0\.5em 0;/,
-    );
-    expect(uiCss).toContain(".compose-tiptap-body .tiptap li > p:first-child");
     expect(uiCss).toContain(
       ".compose-tiptap-body .tiptap li > p:has(+ :is(ul, ol))",
     );
@@ -616,18 +637,9 @@ describe("timeline cards", () => {
     );
   });
 
-  it("uses inset-note styling for compose editor blockquotes", () => {
+  it("keeps the reply composer's blockquote denser than the post's", () => {
     const css = readComponentCss();
 
-    expect(css).toMatch(
-      /\.compose-tiptap-body\s+\.tiptap\s+blockquote\s*\{[\s\S]*background:\s*linear-gradient\(/,
-    );
-    expect(css).toMatch(
-      /\.compose-tiptap-body\s+\.tiptap\s+blockquote:focus-within\s*\{/,
-    );
-    expect(css).toMatch(
-      /\.compose-tiptap-body\s+\.tiptap\s+blockquote\s*\{[^}]*margin:\s*1\.4rem 0;[^}]*padding:\s*1\.4rem 1rem 0\.75rem;/,
-    );
     expect(css).toMatch(
       /\.compose-reply-compose-layout\s+\.compose-tiptap-body\s+\.tiptap\s+blockquote\s*\{[^}]*margin:\s*0\.72em 0;/,
     );

@@ -1,5 +1,31 @@
 # create-jant
 
+## 1.4.0
+
+### Minor Changes
+
+- [#187](https://github.com/jant-me/jant/pull/187) [`f622c31`](https://github.com/jant-me/jant/commit/f622c31509ed3b491a0c2a130dcd7ff0e9837e00) Thanks [@theowenyoung](https://github.com/theowenyoung)! - Atom feeds now carry a Link post's stored site icon: `<jant:icon>` on the entry, and `icon` on `<jant:post>` inside a Thread.
+
+  **Upgrade notes**
+
+  - No database migrations.
+
+### Patch Changes
+
+- [#187](https://github.com/jant-me/jant/pull/187) [`b672051`](https://github.com/jant-me/jant/commit/b6720517d99c05fc87738e414f6b72f498071d38) Thanks [@theowenyoung](https://github.com/theowenyoung)! - Translate the `/subscribe` page into Simplified and Traditional Chinese when the site or active multilingual view uses Chinese, while keeping the surrounding public header and footer on the reader shell.
+
+## 1.3.0
+
+### Minor Changes
+
+- [#186](https://github.com/jant-me/jant/pull/186) [`c67f813`](https://github.com/jant-me/jant/commit/c67f8138499ffd8a0fcbb2c172dce3a758661c63) Thanks [@theowenyoung](https://github.com/theowenyoung)! - On **Settings → Stats**, a post now also counts when a reader read all of it in a list without opening its page: on the home page, in a collection, on `/featured`, or in the archive's list view. An untitled note is read in full on the home page and rarely opened, so its count used to stay near zero beside titled posts that show only an excerpt in a list. Read in full means every part of the post was on screen, nothing of it was left folded, every item of a media row that scrolls sideways was seen, and it stayed in view long enough to read its text.
+
+  A Thread counts as one post, listed under its first: opening any of its posts counts toward it, and so does reading all of it in a list. One page load counts a post once, and a read in a list counts in the total, the chart, the hours, and the referrers too. Nothing about any reader is stored or kept.
+
+  **Upgrade notes**
+
+  - Two database migrations on `view_count`. Run `jant migrate` before starting the new version, as on every upgrade.
+
 ## 1.2.0
 
 ## 1.1.0
