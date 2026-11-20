@@ -88,7 +88,13 @@ git push -u origin chore/sync-upstream-YYYY-MM-DD
 
 ## 发布镜像和测试环境
 
-`.github/workflows/docker-my-release.yml` 在 `chenyahui/jant` 的 `my-release` 分支更新时自动运行。
+合入 `my-release` 后，准备部署时用 GitHub CLI 手动启动发布：
+
+```bash
+gh workflow run docker-my-release.yml --repo chenyahui/jant --ref my-release
+```
+
+工作流构建触发时 `my-release` 的最新提交。合并或推送分支不会触发发布。
 服务器架构为 x86_64，因此只构建 `linux/amd64` 镜像。流程先运行现有的 Docker Compose 启动检查，通过后发布镜像。
 镜像发布后，流程自动部署到 [Jant 测试环境](https://jant.cyhone.com)，并检查 HTTPS 就绪状态。
 工作流使用仓库级 Actions Secrets `TCR_USERNAME` 和 `TCR_PASSWORD` 登录腾讯云 TCR 个人版。
@@ -119,9 +125,7 @@ mise run docker-up
 需要固定版本时，可将 `latest` 替换为对应的日期与提交号标签。回退前先确认数据库兼容性；
 如果新版本已迁移数据库，可能还需要恢复升级前的数据备份。
 
-workflow 也声明了 `workflow_dispatch`，但 GitHub 要求默认分支中存在该 workflow 才能手动触发。
-当前 `main` 保持上游镜像，因此默认依靠合入 `my-release` 后自动构建；失败时可在 Actions 中重跑。
-参见 [GitHub 手动运行 workflow 的要求](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)。
+发布失败时，可以在 GitHub Actions 重跑同一次发布。
 
 ### 测试服务器
 
