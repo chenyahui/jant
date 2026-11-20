@@ -4,7 +4,7 @@
 set -euo pipefail
 
 image="${SSH_ORIGINAL_COMMAND:-}"
-if [[ ! "$image" =~ ^ghcr\.io/chenyahui/jant-my-release@sha256:[a-f0-9]{64}$ ]]; then
+if [[ ! "$image" =~ ^ccr\.ccs\.tencentyun\.com/chenyahui/jant-my-release@sha256:[a-f0-9]{64}$ ]]; then
   echo "Only a published Jant my-release image digest is accepted." >&2
   exit 1
 fi

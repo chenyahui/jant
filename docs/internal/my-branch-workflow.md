@@ -91,21 +91,21 @@ git push -u origin chore/sync-upstream-YYYY-MM-DD
 `.github/workflows/docker-my-release.yml` 在 `chenyahui/jant` 的 `my-release` 分支更新时自动运行。
 服务器架构为 x86_64，因此只构建 `linux/amd64` 镜像。流程先运行现有的 Docker Compose 启动检查，通过后发布镜像。
 镜像发布后，流程自动部署到 [Jant 测试环境](https://jant.cyhone.com)，并检查 HTTPS 就绪状态。
-登录 GHCR 使用 GitHub 自动提供的 `GITHUB_TOKEN`，无需额外配置 Docker Hub 密钥。
+工作流使用仓库级 Actions Secrets `TCR_USERNAME` 和 `TCR_PASSWORD` 登录腾讯云 TCR 个人版。
+`TCR_USERNAME` 填腾讯云「登录实例」显示的账号 ID，`TCR_PASSWORD` 填该账号的镜像仓库登录密码。
 
-镜像名为 `ghcr.io/chenyahui/jant-my-release`，每次发布两个标签：
+镜像名为 `ccr.ccs.tencentyun.com/chenyahui/jant-my-release`，每次发布两个标签：
 
 - `latest`：指向最近发布的构建。
 - `v20261116-abc1234`：提交日期加提交号前七位。日期按北京时间计算，同一提交重跑时标签保持一致。
 
-首次发布后，GHCR 包默认为私有。自动部署通过 SSH 标准输入传递本次任务的临时 `GITHUB_TOKEN`，
-服务器仅在拉取期间使用它，随后删除临时登录配置。如需匿名拉取，可在包设置中将可见性改为 Public。
-详见 [GitHub Container registry 文档](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)。
+TCR 仓库为私有仓库。自动部署通过 SSH 标准输入传递 Docker 登录凭证，服务器将凭证保存在临时 Docker 配置中，任务退出时删除该配置。
+有权拉取该仓库的用户可运行 `docker login ccr.ccs.tencentyun.com` 登录，详见 [TCR 个人版快速入门](https://cloud.tencent.com/document/product/1141/63910)。
 
 使用仓库中的 Compose 配置时，在 `.env` 中设置镜像：
 
 ```dotenv
-IMAGE=ghcr.io/chenyahui/jant-my-release:latest
+IMAGE=ccr.ccs.tencentyun.com/chenyahui/jant-my-release:latest
 ```
 
 然后拉取并启动：
@@ -137,7 +137,7 @@ GitHub Environment `jant-test` 只允许 `my-release` 分支部署，包含：
 | Variable | `DEPLOY_HOST`        | 测试服务器地址                      |
 
 部署公钥在服务器的 `authorized_keys` 中使用 `restrict` 和固定命令，不能开启交互式终端、转发端口或执行任意命令。
-入口只接受 `ghcr.io/chenyahui/jant-my-release@sha256:…`，部署本次任务产出的镜像摘要。
+入口只接受 `ccr.ccs.tencentyun.com/chenyahui/jant-my-release@sha256:…`，部署本次任务产出的镜像摘要。
 
 服务器配置的源文件位于 `scripts/my-release/`，由管理员安装为 root 所有：
 
