@@ -224,6 +224,14 @@ mise run clean-reset      # Nuclear reset — delete everything and start fresh
 mise run auth-reset-token # Generate password reset link (local)
 ```
 
+### Docker with a disposable backup
+
+Run `mise run docker-dev-up` from the repository root. It needs Docker Compose, Python 3.9 or later, SSH read access to `chenyahui/jant-backup`, and a local `AUTH_SECRET` in `.env`. The first launch clones the backup to `../jant-backup`. Later launches fetch into that checkout and restore from the latest fetched commit. The files in `../jant-backup` stay at the checked-out revision.
+
+Set `JANT_DEV_BACKUP_DIR` to reuse a backup checkout at a different path. Set `JANT_DEV_BACKUP_REPO` to use a temporary clone of another repository with the same backup layout.
+
+Each launch restores the latest verified SQLite and media snapshot and serves it at `http://127.0.0.1:3000` by default. The restored copy has GitHub Sync disconnected. Stop with Ctrl+C or `mise run docker-dev-down` to discard database changes and uploads. The next launch starts from a fresh backup.
+
 ### CI
 
 ```bash

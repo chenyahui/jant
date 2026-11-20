@@ -1303,3 +1303,7 @@ btn-outline"` compiles, passes every test, and only shows up as a button whose
   (`gh run view --json status,conclusion`) before reporting a failure, and
   watch again while it is still going; `preview-site.sh` once reported "The
   deploy failed" for a deploy that went on to succeed.
+- For application backups, verify the recovery set before choosing what to sync:
+  Jant needs SQLite plus uploaded media and their storage metadata. Do not narrow
+  a request to preserve site data into database-only backups without explicit
+  agreement. Test restoring an uploaded file as well as reading the database.
