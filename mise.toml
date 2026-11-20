@@ -656,12 +656,14 @@ description = "Build the local development Docker Compose image"
 run = "docker compose -f compose.dev.yml build"
 
 [tasks.docker-dev-up]
-description = "Start the development Docker Compose stack from the local checkout"
-run = "docker compose -f compose.dev.yml up --build"
+description = "Start the development Docker stack on a disposable copy of the latest backup"
+run = "bash scripts/docker-dev-up.sh"
 
 [tasks.docker-dev-down]
 description = "Stop the development Docker Compose stack"
-run = "docker compose -f compose.dev.yml down"
+# The foreground up command still reads the container's exit status after it
+# stops. Removing the container here can race that read.
+run = "docker compose -f compose.dev.yml stop"
 
 [tasks.docker-dev-logs]
 description = "Tail logs from the development Docker Compose stack"
