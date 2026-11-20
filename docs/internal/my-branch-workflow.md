@@ -9,39 +9,74 @@ fork 专用规则统一放在本文档中。上游的指令文件（`AGENTS.md` 
 | 分支                         | 用途                     | 允许的更新方式                    |
 | ---------------------------- | ------------------------ | --------------------------------- |
 | `main`                       | 镜像官方项目             | 仅从 `upstream/main` 快进更新     |
-| `my-release`                 | 集成 fork 中已完成的工作 | 通过合并提交纳入工作分支或 `main` |
+| `my-release`                 | 集成 fork 中已完成的工作 | 直接提交，或合入工作分支和 `main` |
 | `feat/*`、`fix/*`、`chore/*` | 开发和验证改动           | 开发提交                          |
 
-所有开发工作都在工作分支上完成，包括文档、修复和集成冲突处理。不要把 fork 的改动合入 `main`。
-不要在 `my-release` 上创建独立提交，也不要使用压缩合并（Squash and merge）或变基合并（Rebase and merge）。
+工作分支用于独立开发、验证和处理集成冲突。不要把 fork 的改动合入 `main`。
 
 ## 开始工作
+
+预计贡献给上游的改动，从最新的 `upstream/main` 开工作分支。个人 fork 使用 `my-release` 集成改动。
+工作分支按用途命名：特性使用 `feat/<name>`，修复使用 `fix/<name>`，维护使用 `chore/<name>`。
+
+### 贡献给上游
+
+```bash
+git fetch upstream
+git switch -c feat/my-feature upstream/main
+```
+
+在 `feat/my-feature` 开发并验证，将该分支推送到个人 fork，向 `jant-me/jant` 的 `main` 提 PR。
+特性改动都提交到这个分支，保持上游 PR 只包含本次改动。
+
+同一个工作目录切换分支时，Git 忽略的本地配置（如 `packages/core/.dev.vars` 和
+`packages/core/.env.node`）会保留。需要独立目录时，可以用
+`mise run draft feat/my-feature upstream/main` 创建 worktree，代替上面的 `git switch`。
+这个任务会复制已有的 `.dev.vars`。如果使用 Node 运行时，在新目录单独准备 `.env.node`。
+
+需要用 `my-release` 的 Docker 配置验证时，从远端的 `my-release` 开集成分支，再合入特性分支：
+
+```bash
+git fetch origin
+git switch -c chore/integrate-my-feature origin/my-release
+git merge feat/my-feature
+```
+
+在集成分支上处理与个人配置有关的冲突，并用现有 Docker 流程验证。需要修正特性时，
+先在 `feat/my-feature` 提交，再合入集成分支复测。
+
+如果需要提前部署到个人环境，按下文的集成流程把集成分支合入 `my-release`。
+如果可以等上游合入，按「同步官方项目」的流程把已合入的特性带回 `my-release`。
+
+### 只用于个人 fork
 
 ```bash
 git fetch origin
 git switch my-release
 git merge --ff-only origin/my-release
-git switch -c feat/my-feature
 ```
 
-修复使用 `fix/<name>`，维护使用 `chore/<name>`。准备贡献给官方项目的分支可以从 `main` 创建；
-其上游 PR 应提交到 `jant-me/jant`，而不是 fork 的 `main`。
+可以在 `my-release` 上直接提交并推送，也可以用 `git switch -c chore/my-fork-change` 创建工作分支。
 
 ## 集成已完成的工作
 
-在工作分支上运行 `AGENTS.md` 要求的检查，然后推送分支，创建以 `my-release` 为目标的 PR。
-合并时选择 **Create a merge commit**。创建 PR 前，先在工作分支上合入目标分支的最新改动：
+可以在本地将工作分支合入 `my-release` 后直接推送，也可以向 `my-release` 提 PR。
+先合入 `origin/my-release` 的最新改动，再运行 `AGENTS.md` 要求的检查。
+以下以在本地合入个人 fork 的工作分支为例：
 
 ```bash
 git fetch origin
-git switch feat/my-feature
+git switch chore/my-fork-change
 git merge origin/my-release
 # 在此分支解决冲突、提交，并运行要求的检查。
-git push -u origin feat/my-feature
+git switch my-release
+git merge --ff-only origin/my-release
+git merge --no-ff chore/my-fork-change
+git push origin my-release
 ```
 
-如果准备合并期间 `my-release` 有了新提交，回到工作分支，合入更新后的目标分支并重新验证。
-不要直接在 `my-release` 上修改文件来解决功能集成冲突。
+如果从 GitHub 合并 PR，选择 **Create a merge commit**。如果准备合并期间 `my-release` 有了新提交，
+回到工作分支，合入更新后的目标分支并重新验证。
 
 ## 同步官方项目
 
@@ -65,26 +100,15 @@ git switch my-release
 git merge --ff-only origin/my-release
 git switch -c chore/sync-upstream-YYYY-MM-DD
 git merge main
-# 解决冲突，按需提交，并运行要求的检查。
-git push -u origin chore/sync-upstream-YYYY-MM-DD
+# 解决冲突，按需提交。
 ```
 
 按上文「集成已完成的工作」流程，将该分支合入 `my-release`。
 
 ## 规则适用范围
 
-本文档定义 fork 的分支约定，GitHub 分支保护则由仓库设置单独控制。目前已启用以下保护：
-
-- `main`：锁定分支，允许从 `jant-me/jant` 同步 fork。
-- `my-release`：要求通过 PR 合并，管理员同样受限，禁止强制推送和删除分支。仅允许合并提交。
-  此 fork 由一人维护，不要求额外的审核人批准。
-
-`main` 使用经典分支保护规则，并启用 fork 同步。`my-release` 使用已启用的
-[PR-only 规则集](https://github.com/chenyahui/jant/settings/rules/26936942)，没有可绕过规则的用户或应用。
-两个分支都禁止直接推送；`main` 通过 fork 同步流程更新，`my-release` 通过 PR 集成改动。
-
-上游的贡献指南和包发布说明仍描述官方项目的流程。在此 fork 中，本地工作以 `my-release` 为目标分支。
-创建这个分支不会改变默认分支或包发布配置。个人镜像由下文的独立 workflow 构建和发布。
+GitHub 锁定了 `main`，并允许从 `jant-me/jant` 同步 fork。`my-release` 的
+[分支规则集](https://github.com/chenyahui/jant/settings/rules/26936942)已停用，可以直接推送。
 
 ## 发布镜像和测试环境
 
