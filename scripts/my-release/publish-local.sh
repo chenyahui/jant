@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
+set +x
 
 usage() {
-  printf '%s\n' 'Usage: bash scripts/my-release/publish-local.sh [--login | --deploy <ssh-key>]' \
+  printf '%s\n' 'Usage: bash scripts/my-release/publish-local.sh [--login] [--deploy [ssh-key]]' \
     'Build the checked-out my-release commit for linux/amd64 and push it to TCR.' \
     'Use --login to log in with TCR_USERNAME and TCR_PASSWORD from the environment.' \
-    'Set TCR_USERNAME to your TCR account ID when using --deploy.'
+    'Use --deploy to update the test site with the default SSH identity or a restricted deployment key.'
 }
 
 fail() {
@@ -18,21 +19,28 @@ if [[ ${1:-} == --help || ${1:-} == -h ]]; then
   exit 0
 fi
 
-deploy_key=""
 login=false
-if [[ $# -eq 1 && $1 == --login ]]; then
+if [[ ${1:-} == --login ]]; then
   login=true
+  shift
   [[ -n ${TCR_USERNAME:-} ]] || fail "Export TCR_USERNAME before publishing."
   [[ -n ${TCR_PASSWORD:-} ]] || fail "Export TCR_PASSWORD before publishing."
-elif [[ $# -ne 0 ]]; then
-  if [[ $# -ne 2 || $1 != --deploy ]]; then
+fi
+
+deploy=false
+deploy_key=""
+if [[ $# -ne 0 ]]; then
+  if [[ $1 != --deploy || $# -gt 2 ]]; then
     usage >&2
     exit 2
   fi
-  deploy_key="$2"
-  [[ -f "$deploy_key" && -r "$deploy_key" ]] || fail "Cannot read SSH key: $deploy_key"
+  deploy=true
+  if [[ $# -eq 2 ]]; then
+    deploy_key="$2"
+    [[ -f "$deploy_key" && -r "$deploy_key" ]] || fail "Cannot read SSH key: $deploy_key"
+  fi
   [[ ${TCR_USERNAME:-} =~ ^[0-9]+$ ]] || fail "Set TCR_USERNAME to your TCR account ID."
-  [[ -t 0 ]] || fail "Run --deploy in a terminal to enter the TCR password."
+  [[ -n ${TCR_PASSWORD:-} || -t 0 ]] || fail "Export TCR_PASSWORD or run --deploy in a terminal."
 fi
 
 repo_root="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
@@ -45,14 +53,12 @@ version="v${date}-${revision:0:7}"
 registry="ccr.ccs.tencentyun.com"
 image="$registry/chenyahui/jant-my-release"
 
+registry_password="${TCR_PASSWORD:-}"
+unset TCR_PASSWORD
 docker buildx version >/dev/null 2>&1 || fail "Install Docker Buildx before publishing."
 
 if [[ "$login" == true ]]; then
-  (
-    set +x
-    printf '%s' "$TCR_PASSWORD" | docker login "$registry" --username "$TCR_USERNAME" --password-stdin
-  )
-  unset TCR_PASSWORD
+  printf '%s' "$registry_password" | docker login "$registry" --username "$TCR_USERNAME" --password-stdin
 fi
 
 release_profile="jant-release"
@@ -102,17 +108,25 @@ docker image tag "$image:$version" "$image:latest"
 docker image push "$image:latest"
 printf 'Published %s@%s\n' "$image" "$digest"
 
-if [[ -n "$deploy_key" ]]; then
-  (
-    set +x
+if [[ "$deploy" == true ]]; then
+  ssh_options=(-T -o BatchMode=yes -o ConnectTimeout=15 -o ServerAliveInterval=30 -o StrictHostKeyChecking=yes)
+  image_ref="$image@$digest"
+  # The restricted key accepts a bare digest reference as its forced command.
+  # The default login calls the same deployment script through sudo.
+  if [[ -n "$deploy_key" ]]; then
+    ssh_options+=(-i "$deploy_key" -o IdentitiesOnly=yes)
+    deploy_command="$image_ref"
+  else
+    deploy_command="sudo -n /usr/local/sbin/jant-test-deploy $image_ref"
+  fi
+
+  if [[ -z "$registry_password" ]]; then
     IFS= read -rs -p 'TCR password for test deployment: ' registry_password
     printf '\n' >&2
     [[ -n "$registry_password" ]] || fail "Enter the TCR password to deploy."
-    printf '%s\n%s' "$TCR_USERNAME" "$registry_password" | ssh -T -i "$deploy_key" \
-      -o IdentitiesOnly=yes \
-      -o ConnectTimeout=15 \
-      -o ServerAliveInterval=30 \
-      -o StrictHostKeyChecking=yes \
-      jant@193.112.18.149 "$image@$digest"
-  )
+  fi
+  printf 'Deploying %s to jant.cyhone.com\n' "$image_ref"
+  printf '%s\n%s' "$TCR_USERNAME" "$registry_password" | ssh "${ssh_options[@]}" jant@193.112.18.149 "$deploy_command"
+  curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors --max-time 30 https://jant.cyhone.com/readyz
+  printf '\n'
 fi

@@ -127,14 +127,10 @@ macOS 上，如果当前 Docker context 是 Colima 的默认 context，`make dep
 
 `make deploy` 检查当前分支为 `my-release`，然后执行 `git pull --ff-only origin my-release`。拉取失败时停止发布。
 拉取成功后，命令用环境变量登录 TCR，从更新后的本地提交构建一次镜像，推送版本标签和 `latest`。
-工作目录中未提交的改动不会打进镜像。这个命令只发布镜像，跳过测试和 Docker Compose 冒烟检查。
+工作目录中未提交的改动不会打进镜像。本机发布跳过测试和 Docker Compose 冒烟检查。
 
-要一并更新测试站，先运行 `docker login ccr.ccs.tencentyun.com`，再把服务器已授权的部署私钥路径传给 `--deploy`。
-SSH 会用本机的 `known_hosts` 核验下文所列服务器的 IP 地址。脚本在镜像推送后提示输入 TCR 密码，服务器按本次推送返回的摘要拉取镜像。
-
-```bash
-bash scripts/my-release/publish-local.sh --deploy ~/.ssh/jant-test-deploy
-```
+镜像推送后，命令用本机默认 SSH 身份登录下文所列服务器的 `jant` 用户，按本次推送返回的摘要更新测试站，再检查 HTTPS 就绪状态。
+发布前确认本机的 `known_hosts` 已信任服务器的 IP 地址，且 `jant` 用户可以用 `sudo -n` 运行 `/usr/local/sbin/jant-test-deploy`。
 
 ### 在 GitHub Actions 发布
 
