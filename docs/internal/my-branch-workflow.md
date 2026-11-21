@@ -114,7 +114,7 @@ GitHub 锁定了 `main`，并允许从 `jant-me/jant` 同步 fork。`my-release`
 
 ### 在本机发布
 
-启动 Docker，确认它能构建 `linux/amd64` 镜像。Apple 芯片的 Mac 需要在 Docker 虚拟机中启用 x86_64 模拟。
+启动 Docker，确认 `docker buildx version` 可用。Apple 芯片的 Mac 需要在 Docker 虚拟机中启用 x86_64 模拟。
 在当前终端导出 `TCR_USERNAME` 和 `TCR_PASSWORD`，切换到 `my-release` 后执行：
 
 ```bash

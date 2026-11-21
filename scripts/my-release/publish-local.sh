@@ -45,6 +45,8 @@ version="v${date}-${revision:0:7}"
 registry="ccr.ccs.tencentyun.com"
 image="$registry/chenyahui/jant-my-release"
 
+docker buildx version >/dev/null 2>&1 || fail "Install Docker Buildx before publishing."
+
 if [[ "$login" == true ]]; then
   (
     set +x
@@ -55,8 +57,9 @@ fi
 
 printf 'Building %s:%s for linux/amd64\n' "$image" "$version"
 # Use the same source as the version tag, even when the working tree has edits.
-git -C "$repo_root" archive "$revision" | docker build \
+git -C "$repo_root" archive "$revision" | docker buildx build \
   --platform linux/amd64 \
+  --load \
   --build-arg "JANT_BUILD_ID=$version" \
   --label 'org.opencontainers.image.title=Jant my-release' \
   --label 'org.opencontainers.image.source=https://github.com/chenyahui/jant' \
