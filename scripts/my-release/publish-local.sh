@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  printf '%s\n' 'Usage: bash scripts/my-release/publish-local.sh [--deploy <ssh-key>]' \
+    'Build the checked-out my-release commit for linux/amd64 and push it to TCR.' \
+    'Set TCR_USERNAME to your TCR account ID when using --deploy.'
+}
+
+fail() {
+  printf '%s\n' "$*" >&2
+  exit 1
+}
+
+if [[ ${1:-} == --help || ${1:-} == -h ]]; then
+  usage
+  exit 0
+fi
+
+deploy_key=""
+if [[ $# -ne 0 ]]; then
+  if [[ $# -ne 2 || $1 != --deploy ]]; then
+    usage >&2
+    exit 2
+  fi
+  deploy_key="$2"
+  [[ -f "$deploy_key" && -r "$deploy_key" ]] || fail "Cannot read SSH key: $deploy_key"
+  [[ ${TCR_USERNAME:-} =~ ^[0-9]+$ ]] || fail "Set TCR_USERNAME to your TCR account ID."
+  [[ -t 0 ]] || fail "Run --deploy in a terminal to enter the TCR password."
+fi
+
+repo_root="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
+branch="$(git -C "$repo_root" symbolic-ref --quiet --short HEAD || true)"
+[[ "$branch" == my-release ]] || fail "Switch to my-release before publishing."
+
+revision="$(git -C "$repo_root" rev-parse HEAD)"
+date="$(TZ=Asia/Shanghai git -C "$repo_root" show -s --format=%cd --date=format-local:%Y%m%d "$revision")"
+version="v${date}-${revision:0:7}"
+image="ccr.ccs.tencentyun.com/chenyahui/jant-my-release"
+
+printf 'Building %s:%s for linux/amd64\n' "$image" "$version"
+# Use the same source as the version tag, even when the working tree has edits.
+git -C "$repo_root" archive "$revision" | docker build \
+  --platform linux/amd64 \
+  --build-arg "JANT_BUILD_ID=$version" \
+  --label 'org.opencontainers.image.title=Jant my-release' \
+  --label 'org.opencontainers.image.source=https://github.com/chenyahui/jant' \
+  --label "org.opencontainers.image.version=$version" \
+  --label "org.opencontainers.image.revision=$revision" \
+  --label 'org.opencontainers.image.licenses=AGPL-3.0-or-later' \
+  --tag "$image:$version" \
+  -
+
+push_log="$(mktemp)"
+trap 'rm -f "$push_log"' EXIT
+docker image push "$image:$version" | tee "$push_log"
+digest="$(awk -v tag="$version:" '$1 == tag && $2 == "digest:" { print $3 }' "$push_log")"
+[[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]] || fail "Could not read the digest for $image:$version."
+
+docker image tag "$image:$version" "$image:latest"
+docker image push "$image:latest"
+printf 'Published %s@%s\n' "$image" "$digest"
+
+if [[ -n "$deploy_key" ]]; then
+  (
+    set +x
+    IFS= read -rs -p 'TCR password for test deployment: ' registry_password
+    printf '\n' >&2
+    [[ -n "$registry_password" ]] || fail "Enter the TCR password to deploy."
+    printf '%s\n%s' "$TCR_USERNAME" "$registry_password" | ssh -T -i "$deploy_key" \
+      -o IdentitiesOnly=yes \
+      -o ConnectTimeout=15 \
+      -o ServerAliveInterval=30 \
+      -o StrictHostKeyChecking=yes \
+      jant@193.112.18.149 "$image@$digest"
+  )
+fi
