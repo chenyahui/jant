@@ -55,6 +55,30 @@ if [[ "$login" == true ]]; then
   unset TCR_PASSWORD
 fi
 
+release_profile="jant-release"
+stop_release_vm=false
+push_log=""
+cleanup() {
+  if [[ -n "$push_log" ]]; then
+    rm -f "$push_log"
+  fi
+  if [[ "$stop_release_vm" == true ]]; then
+    colima stop "$release_profile" || printf 'Could not stop Colima profile %s.\n' "$release_profile" >&2
+  fi
+}
+trap cleanup EXIT
+
+# Reuse the release VM without changing the user's Docker context.
+if [[ "$login" == true && $(uname -s) == Darwin &&
+      -z ${DOCKER_CONTEXT:-} && -z ${DOCKER_HOST:-} &&
+      $(docker context show) == colima ]]; then
+  if ! colima status "$release_profile" >/dev/null 2>&1; then
+    colima start "$release_profile" --activate=false
+    stop_release_vm=true
+  fi
+  export DOCKER_CONTEXT="colima-$release_profile"
+fi
+
 printf 'Building %s:%s for linux/amd64\n' "$image" "$version"
 # Use the same source as the version tag, even when the working tree has edits.
 git -C "$repo_root" archive "$revision" | docker buildx build \
@@ -70,7 +94,6 @@ git -C "$repo_root" archive "$revision" | docker buildx build \
   -
 
 push_log="$(mktemp)"
-trap 'rm -f "$push_log"' EXIT
 docker image push "$image:$version" | tee "$push_log"
 digest="$(awk -v tag="$version:" '$1 == tag && $2 == "digest:" { print $3 }' "$push_log")"
 [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]] || fail "Could not read the digest for $image:$version."

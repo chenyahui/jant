@@ -114,13 +114,16 @@ GitHub 锁定了 `main`，并允许从 `jant-me/jant` 同步 fork。`my-release`
 
 ### 在本机发布
 
-启动 Docker，确认 `docker buildx version` 可用。Apple 芯片的 Mac 需要在 Docker 虚拟机中启用 x86_64 模拟。
+确认 `docker buildx version` 可用。Apple 芯片的 Mac 需要在 Docker 虚拟机中启用 x86_64 模拟。
 在当前终端导出 `TCR_USERNAME` 和 `TCR_PASSWORD`，切换到 `my-release` 后执行：
 
 ```bash
 git switch my-release
 make deploy
 ```
+
+macOS 上，如果当前 Docker context 是 Colima 的默认 context，`make deploy` 会使用专用的 `jant-release` profile。
+命令会启动并在结束后关闭本次启动的虚拟机。已设置 `DOCKER_CONTEXT` 或 `DOCKER_HOST` 时，使用指定的 Docker 环境。
 
 `make deploy` 用环境变量登录 TCR，从当前提交构建一次镜像，推送版本标签和 `latest`。
 工作目录中未提交的改动不会打进镜像。这个命令只发布镜像，跳过测试和 Docker Compose 冒烟检查。
