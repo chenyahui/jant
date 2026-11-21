@@ -125,7 +125,8 @@ make deploy
 macOS 上，如果当前 Docker context 是 Colima 的默认 context，`make deploy` 会使用专用的 `jant-release` profile。
 命令会启动并在结束后关闭本次启动的虚拟机。已设置 `DOCKER_CONTEXT` 或 `DOCKER_HOST` 时，使用指定的 Docker 环境。
 
-`make deploy` 用环境变量登录 TCR，从当前提交构建一次镜像，推送版本标签和 `latest`。
+`make deploy` 检查当前分支为 `my-release`，然后执行 `git pull --ff-only origin my-release`。拉取失败时停止发布。
+拉取成功后，命令用环境变量登录 TCR，从更新后的本地提交构建一次镜像，推送版本标签和 `latest`。
 工作目录中未提交的改动不会打进镜像。这个命令只发布镜像，跳过测试和 Docker Compose 冒烟检查。
 
 要一并更新测试站，先运行 `docker login ccr.ccs.tencentyun.com`，再把服务器已授权的部署私钥路径传给 `--deploy`。
