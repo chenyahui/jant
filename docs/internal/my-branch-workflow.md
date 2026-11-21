@@ -115,22 +115,21 @@ GitHub 锁定了 `main`，并允许从 `jant-me/jant` 同步 fork。`my-release`
 ### 在本机发布
 
 启动 Docker，确认它能构建 `linux/amd64` 镜像。Apple 芯片的 Mac 需要在 Docker 虚拟机中启用 x86_64 模拟。
-切换到 `my-release`，登录 TCR，再运行脚本：
+在当前终端导出 `TCR_USERNAME` 和 `TCR_PASSWORD`，切换到 `my-release` 后执行：
 
 ```bash
 git switch my-release
-docker login ccr.ccs.tencentyun.com
-bash scripts/my-release/publish-local.sh
+make deploy
 ```
 
-脚本用当前提交构建一次镜像，推送版本标签和 `latest`。工作目录中未提交的改动不会打进镜像。
-本机发布跳过测试和 Docker Compose 冒烟检查。
+`make deploy` 用环境变量登录 TCR，从当前提交构建一次镜像，推送版本标签和 `latest`。
+工作目录中未提交的改动不会打进镜像。这个命令只发布镜像，跳过测试和 Docker Compose 冒烟检查。
 
-要一并更新测试站，把服务器已授权的部署私钥路径传给 `--deploy`，并指定 TCR 账号 ID。
+要一并更新测试站，先运行 `docker login ccr.ccs.tencentyun.com`，再把服务器已授权的部署私钥路径传给 `--deploy`。
 SSH 会用本机的 `known_hosts` 核验下文所列服务器的 IP 地址。脚本在镜像推送后提示输入 TCR 密码，服务器按本次推送返回的摘要拉取镜像。
 
 ```bash
-TCR_USERNAME=你的TCR账号ID bash scripts/my-release/publish-local.sh --deploy ~/.ssh/jant-test-deploy
+bash scripts/my-release/publish-local.sh --deploy ~/.ssh/jant-test-deploy
 ```
 
 ### 在 GitHub Actions 发布

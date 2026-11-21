@@ -2,8 +2,9 @@
 set -euo pipefail
 
 usage() {
-  printf '%s\n' 'Usage: bash scripts/my-release/publish-local.sh [--deploy <ssh-key>]' \
+  printf '%s\n' 'Usage: bash scripts/my-release/publish-local.sh [--login | --deploy <ssh-key>]' \
     'Build the checked-out my-release commit for linux/amd64 and push it to TCR.' \
+    'Use --login to log in with TCR_USERNAME and TCR_PASSWORD from the environment.' \
     'Set TCR_USERNAME to your TCR account ID when using --deploy.'
 }
 
@@ -18,7 +19,12 @@ if [[ ${1:-} == --help || ${1:-} == -h ]]; then
 fi
 
 deploy_key=""
-if [[ $# -ne 0 ]]; then
+login=false
+if [[ $# -eq 1 && $1 == --login ]]; then
+  login=true
+  [[ -n ${TCR_USERNAME:-} ]] || fail "Export TCR_USERNAME before publishing."
+  [[ -n ${TCR_PASSWORD:-} ]] || fail "Export TCR_PASSWORD before publishing."
+elif [[ $# -ne 0 ]]; then
   if [[ $# -ne 2 || $1 != --deploy ]]; then
     usage >&2
     exit 2
@@ -36,7 +42,16 @@ branch="$(git -C "$repo_root" symbolic-ref --quiet --short HEAD || true)"
 revision="$(git -C "$repo_root" rev-parse HEAD)"
 date="$(TZ=Asia/Shanghai git -C "$repo_root" show -s --format=%cd --date=format-local:%Y%m%d "$revision")"
 version="v${date}-${revision:0:7}"
-image="ccr.ccs.tencentyun.com/chenyahui/jant-my-release"
+registry="ccr.ccs.tencentyun.com"
+image="$registry/chenyahui/jant-my-release"
+
+if [[ "$login" == true ]]; then
+  (
+    set +x
+    printf '%s' "$TCR_PASSWORD" | docker login "$registry" --username "$TCR_USERNAME" --password-stdin
+  )
+  unset TCR_PASSWORD
+fi
 
 printf 'Building %s:%s for linux/amd64\n' "$image" "$version"
 # Use the same source as the version tag, even when the working tree has edits.
