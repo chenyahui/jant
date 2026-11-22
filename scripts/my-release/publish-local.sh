@@ -65,6 +65,8 @@ cleanup() {
     rm -f "$push_log"
   fi
   if [[ "$stop_release_vm" == true ]]; then
+    # Keep Docker from treating the release context as the user's active one.
+    unset DOCKER_CONTEXT
     colima stop "$release_profile" || printf 'Could not stop Colima profile %s.\n' "$release_profile" >&2
   fi
 }
