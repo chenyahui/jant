@@ -8,11 +8,13 @@ fork 专用规则统一放在本文档中。上游的指令文件（`AGENTS.md` 
 
 | 分支                         | 用途                     | 允许的更新方式                    |
 | ---------------------------- | ------------------------ | --------------------------------- |
-| `main`                       | 镜像官方项目             | 仅从 `upstream/main` 快进更新     |
+| `main`                       | 镜像官方项目             | 本地仅从 `origin/main` 快进更新   |
 | `my-release`                 | 集成 fork 中已完成的工作 | 直接提交，或合入工作分支和 `main` |
 | `feat/*`、`fix/*`、`chore/*` | 开发和验证改动           | 开发提交                          |
 
-工作分支用于独立开发、验证和处理集成冲突。不要把 fork 的改动合入 `main`。
+`main` 是只读镜像。本地 `main` 只接收 `origin/main` 的快进更新，fork 的 `main` 只通过 GitHub 从官方仓库同步。
+个人改动提交到工作分支或 `my-release`。禁止在 `main` 上修改文件、提交或变基，也禁止将其他分支合入 `main`。
+fork 的 `main` 禁止直接推送或合入 PR。
 
 ## 开始工作
 
@@ -80,19 +82,20 @@ git push origin my-release
 
 ## 同步官方项目
 
-通过 GitHub 的 **Sync fork** 操作或命令行同步远程 fork，再快进更新本地镜像：
+先在 GitHub 用 **Sync fork** 更新 `origin/main`，或运行 `gh repo sync chenyahui/jant --branch main`。
+然后在干净的 `my-release` 工作区运行：
 
 ```bash
-gh repo sync chenyahui/jant --branch main
-git fetch upstream
-git switch main
-git merge --ff-only upstream/main
+git switch my-release
+make sync
 ```
 
-如果同步或快进更新失败，停下来检查分支为何分叉。不要创建合并提交、把 fork 的改动变基到 `main`，
-也不要用强制推送掩盖分叉。
+`make sync` 从 `origin/main` 快进更新本地 `main`，再将 `origin/my-release` 的新提交快进到本地 `my-release`，最后把 `main` 合入 `my-release`。
+同步结果保留在本地。若 `my-release` 的文件内容有变化，命令显示变更摘要，并在交互终端询问是否运行 `make deploy`。
+输入 `y` 或 `yes` 部署到测试环境，直接回车或在非交互终端运行会跳过部署。
 
-通过集成分支把同步后的 `main` 合入 `my-release`，让冲突处理和验证都在工作分支上完成：
+如果快进失败，先检查分支为何分叉。若 `main` 合入 `my-release` 时有冲突，命令会撤销这次合并。
+在集成分支处理冲突并验证：
 
 ```bash
 git fetch origin
