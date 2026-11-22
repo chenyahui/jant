@@ -122,7 +122,7 @@ git switch my-release
 make deploy
 ```
 
-macOS 上，如果当前 Docker context 是 Colima 的默认 context，`make deploy` 会使用专用的 `jant-release` profile。
+macOS 上，如果已配置 `jant-release`，且当前 Docker context 是 `default`、`colima` 或 `colima-jant-release`，`make deploy` 会使用专用的发布虚拟机。
 命令会启动并在结束后关闭本次启动的虚拟机。已设置 `DOCKER_CONTEXT` 或 `DOCKER_HOST` 时，使用指定的 Docker 环境。
 
 `make deploy` 检查当前分支为 `my-release`，然后执行 `git pull --ff-only origin my-release`。拉取失败时停止发布。

@@ -57,10 +57,6 @@ registry_password="${TCR_PASSWORD:-}"
 unset TCR_PASSWORD
 docker buildx version >/dev/null 2>&1 || fail "Install Docker Buildx before publishing."
 
-if [[ "$login" == true ]]; then
-  printf '%s' "$registry_password" | docker login "$registry" --username "$TCR_USERNAME" --password-stdin
-fi
-
 release_profile="jant-release"
 stop_release_vm=false
 push_log=""
@@ -74,15 +70,27 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Reuse the release VM without changing the user's Docker context.
+# Colima removes a profile's context when it stops, so also handle Docker's default context.
 if [[ "$login" == true && $(uname -s) == Darwin &&
-      -z ${DOCKER_CONTEXT:-} && -z ${DOCKER_HOST:-} &&
-      $(docker context show) == colima ]]; then
-  if ! colima status "$release_profile" >/dev/null 2>&1; then
-    colima start "$release_profile" --activate=false
-    stop_release_vm=true
-  fi
-  export DOCKER_CONTEXT="colima-$release_profile"
+      -z ${DOCKER_CONTEXT:-} && -z ${DOCKER_HOST:-} ]] &&
+    command -v colima >/dev/null &&
+    colima list --profile "$release_profile" --json >/dev/null 2>&1; then
+  case "$(docker context show)" in
+    default|colima|colima-"$release_profile")
+      if ! colima status "$release_profile" >/dev/null 2>&1; then
+        colima start "$release_profile" --activate=false
+        stop_release_vm=true
+      fi
+      export DOCKER_CONTEXT="colima-$release_profile"
+      ;;
+  esac
+fi
+
+docker info --format '{{.ServerVersion}}' >/dev/null ||
+  fail "Docker daemon is unavailable. Start it or set DOCKER_CONTEXT to a running environment."
+
+if [[ "$login" == true ]]; then
+  printf '%s' "$registry_password" | docker login "$registry" --username "$TCR_USERNAME" --password-stdin
 fi
 
 printf 'Building %s:%s for linux/amd64\n' "$image" "$version"
