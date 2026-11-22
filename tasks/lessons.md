@@ -1307,3 +1307,10 @@ btn-outline"` compiles, passes every test, and only shows up as a button whose
   Jant needs SQLite plus uploaded media and their storage metadata. Do not narrow
   a request to preserve site data into database-only backups without explicit
   agreement. Test restoring an uploaded file as well as reading the database.
+
+## Run content enhancements before capturing a share card
+
+- Share cards start from a fresh server-rendered fragment. If an enhancement
+  changes the post's DOM, run the shared enhancement in `prepareShareCard`
+  before measuring the card. Download the PNG through the share dialog to
+  verify the captured result.
