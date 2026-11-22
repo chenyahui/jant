@@ -1,5 +1,8 @@
 # Lessons
 
+- Verify fork synchronization with the official branch ahead of the fork. A
+  fetch from `origin` only sees the fork tip, so a workflow that promises
+  upstream updates must sync the fork before fetching that tip.
 - Treat an adapted content language as the authoritative font profile. Manual
   CJK selection is only a fallback for unadapted content languages, while the
   active font theme remains responsible for serif/sans choices.
