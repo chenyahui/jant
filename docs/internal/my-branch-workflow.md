@@ -82,16 +82,16 @@ git push origin my-release
 
 ## 同步官方项目
 
-先在 GitHub 用 **Sync fork** 更新 `origin/main`，或运行 `gh repo sync chenyahui/jant --branch main`。
-然后在干净的 `my-release` 工作区运行：
+安装 GitHub CLI 并用 `gh auth login` 登录有权同步 fork 的账户。在干净的 `my-release` 工作区运行：
 
 ```bash
 git switch my-release
 make sync
 ```
 
-`make sync` 从 `origin/main` 快进更新本地 `main`，再将 `origin/my-release` 的新提交快进到本地 `my-release`，最后把 `main` 合入 `my-release`。
-同步结果保留在本地。若 `my-release` 的文件内容有变化，命令显示变更摘要，并在交互终端询问是否运行 `make deploy`。
+`make sync` 先用 GitHub 的 **Sync fork** 将 `jant-me/jant` 的 `main` 同步到 fork 的 `main`。
+然后从 `origin/main` 快进更新本地 `main`，将 `origin/my-release` 的新提交快进到本地 `my-release`，最后把 `main` 合入 `my-release`。
+`my-release` 的合并结果保留在本地。若文件内容有变化，命令显示变更摘要，并在交互终端询问是否运行 `make deploy`。
 输入 `y` 或 `yes` 部署到测试环境，直接回车或在非交互终端运行会跳过部署。
 
 如果快进失败，先检查分支为何分叉。若 `main` 合入 `my-release` 时有冲突，命令会撤销这次合并。

@@ -13,6 +13,9 @@ if [[ -n "$status" ]]; then
 fi
 
 previous=$(git rev-parse HEAD)
+printf '%s\n' 'Syncing the GitHub fork from jant-me/jant...'
+gh repo sync github.com/chenyahui/jant --branch main
+
 # Fetch into local main without force so Git rejects local commits and checks other worktrees.
 git fetch --atomic --no-tags origin \
   refs/heads/main:refs/heads/main \
