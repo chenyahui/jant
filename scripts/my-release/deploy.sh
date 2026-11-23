@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Installed root-owned at /usr/local/sbin/jant-test-deploy. Read the TCR
+# Installed root-owned at /usr/local/sbin/jant-production-deploy. Read the TCR
 # username and password from stdin and keep the login in a temporary config.
 set -euo pipefail
 umask 077
 
 image="${1:-}"
 if [[ $# -ne 1 || ! "$image" =~ ^ccr\.ccs\.tencentyun\.com/chenyahui/jant-my-release@sha256:[a-f0-9]{64}$ ]]; then
-  echo "Usage: jant-test-deploy ccr.ccs.tencentyun.com/chenyahui/jant-my-release@sha256:<digest>" >&2
+  echo "Usage: jant-production-deploy ccr.ccs.tencentyun.com/chenyahui/jant-my-release@sha256:<digest>" >&2
   exit 1
 fi
 if ! IFS= read -r registry_username || [[ ! "$registry_username" =~ ^[0-9]+$ ]]; then
@@ -14,12 +14,12 @@ if ! IFS= read -r registry_username || [[ ! "$registry_username" =~ ^[0-9]+$ ]];
   exit 1
 fi
 
-cd /opt/jant-test
-exec 9>/run/lock/jant-test-deploy.lock
+cd /opt/jant-production
+exec 9>/run/lock/jant-production-deploy.lock
 flock -w 600 9
 export IMAGE="$image"
 export DOCKER_CONFIG
-DOCKER_CONFIG="$(mktemp -d /run/jant-test-docker.XXXXXX)"
+DOCKER_CONFIG="$(mktemp -d /run/jant-production-docker.XXXXXX)"
 backup=""
 
 cleanup() {
@@ -40,8 +40,8 @@ docker compose pull
 # Stop writes before copying SQLite, its WAL, and local media together. Keep
 # backups root-readable only; migrations can make an image-only rollback unsafe.
 docker compose stop jant
-backup="/opt/jant-test/backups/$(date -u +%Y%m%dT%H%M%S)-${image##*:}.tar.gz"
-tar -czf "$backup" --exclude=./backups -C /opt/jant-test .
+backup="/opt/jant-production/backups/$(date -u +%Y%m%dT%H%M%S)-${image##*:}.tar.gz"
+tar -czf "$backup" --exclude=./backups -C /opt/jant-production .
 
 docker compose run --rm --no-deps jant-migrate
 
@@ -51,7 +51,7 @@ if [[ -f bootstrap.env ]]; then
   source bootstrap.env
   printf '%s' "$BOOTSTRAP_PASSWORD" | docker compose run --rm --no-deps -T \
     jant-migrate jant setup --email "$BOOTSTRAP_EMAIL" --password-stdin \
-    --site-name 'Jant 测试环境' --language zh-Hans --time-zone Asia/Shanghai
+    --site-name 'Jant' --language zh-Hans --time-zone Asia/Shanghai
   mv bootstrap.env bootstrap.complete.env
 fi
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installed root-owned at /usr/local/bin/jant-test-ssh. The deployment key's
+# Installed root-owned at /usr/local/bin/jant-production-ssh. The deployment key's
 # authorized_keys forced command invokes this entry point with no shell access.
 set -euo pipefail
 
@@ -9,4 +9,4 @@ if [[ ! "$image" =~ ^ccr\.ccs\.tencentyun\.com/chenyahui/jant-my-release@sha256:
   exit 1
 fi
 
-exec sudo -n /usr/local/sbin/jant-test-deploy "$image"
+exec sudo -n /usr/local/sbin/jant-production-deploy "$image"

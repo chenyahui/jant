@@ -6,11 +6,11 @@
 fork 专用规则统一放在本文档中。上游的指令文件（`AGENTS.md` 和 `CONTRIBUTING.md`）保持不变，
 以减少同步冲突。在此 fork 中开始工作时，通过 GitHub 链接引用本文档。
 
-| 分支                         | 用途                     | 允许的更新方式                    |
-| ---------------------------- | ------------------------ | --------------------------------- |
-| `main`                       | 镜像官方项目             | 本地仅从 `origin/main` 快进更新   |
-| `my-release`                 | 集成 fork 中已完成的工作 | 直接提交，或合入工作分支和 `main` |
-| `feat/*`、`fix/*`、`chore/*` | 开发和验证改动           | 开发提交                          |
+| 分支                         | 用途                           | 允许的更新方式                    |
+| ---------------------------- | ------------------------------ | --------------------------------- |
+| `main`                       | 镜像官方项目                   | 本地仅从 `origin/main` 快进更新   |
+| `my-release`                 | 集成 fork 改动并发布到正式环境 | 直接提交，或合入工作分支和 `main` |
+| `feat/*`、`fix/*`、`chore/*` | 开发和验证改动                 | 开发提交                          |
 
 `main` 是只读镜像。本地 `main` 只接收 `origin/main` 的快进更新，fork 的 `main` 只通过 GitHub 从官方仓库同步。
 个人改动提交到工作分支或 `my-release`。禁止在 `main` 上修改文件、提交或变基，也禁止将其他分支合入 `main`。
@@ -47,7 +47,7 @@ git merge feat/my-feature
 在集成分支上处理与个人配置有关的冲突，并用现有 Docker 流程验证。需要修正特性时，
 先在 `feat/my-feature` 提交，再合入集成分支复测。
 
-如果需要提前部署到个人环境，按下文的集成流程把集成分支合入 `my-release`。
+如果需要提前发布到个人站点的正式环境，按下文的集成流程把集成分支合入 `my-release`。
 如果可以等上游合入，按「同步官方项目」的流程把已合入的特性带回 `my-release`。
 
 ### 只用于个人 fork
@@ -92,7 +92,7 @@ make sync
 `make sync` 先用 GitHub 的 **Sync fork** 将 `jant-me/jant` 的 `main` 同步到 fork 的 `main`。
 然后从 `origin/main` 快进更新本地 `main`，将 `origin/my-release` 的新提交快进到本地 `my-release`，最后把 `main` 合入 `my-release`。
 `my-release` 的合并结果保留在本地。若文件内容有变化，命令显示变更摘要，并在交互终端询问是否运行 `make deploy`。
-输入 `y` 或 `yes` 部署到测试环境，直接回车或在非交互终端运行会跳过部署。
+输入 `y` 或 `yes` 部署到正式环境，直接回车或在非交互终端运行会跳过部署。
 
 如果快进失败，先检查分支为何分叉。若 `main` 合入 `my-release` 时有冲突，命令会撤销这次合并。
 在集成分支处理冲突并验证：
@@ -113,7 +113,7 @@ git merge main
 GitHub 锁定了 `main`，并允许从 `jant-me/jant` 同步 fork。`my-release` 的
 [分支规则集](https://github.com/chenyahui/jant/settings/rules/26936942)已停用，可以直接推送。
 
-## 发布镜像和测试环境
+## 发布镜像和部署正式环境
 
 ### 在本机发布
 
@@ -132,8 +132,8 @@ macOS 上，如果已配置 `jant-release`，且当前 Docker context 是 `defau
 拉取成功后，命令用环境变量登录 TCR，从更新后的本地提交构建一次镜像，推送版本标签和 `latest`。
 工作目录中未提交的改动不会打进镜像。本机发布跳过测试和 Docker Compose 冒烟检查。
 
-镜像推送后，命令用本机默认 SSH 身份登录下文所列服务器的 `jant` 用户，按本次推送返回的摘要更新测试站，再检查 HTTPS 就绪状态。
-发布前确认本机的 `known_hosts` 已信任服务器的 IP 地址，且 `jant` 用户可以用 `sudo -n` 运行 `/usr/local/sbin/jant-test-deploy`。
+镜像推送后，命令用本机默认 SSH 身份登录下文所列服务器的 `jant` 用户，按本次推送返回的摘要更新正式站点，再检查 HTTPS 就绪状态。
+发布前确认本机的 `known_hosts` 已信任服务器的 IP 地址，且 `jant` 用户可以用 `sudo -n` 运行 `/usr/local/sbin/jant-production-deploy`。
 
 ### 在 GitHub Actions 发布
 
@@ -145,7 +145,7 @@ gh workflow run docker-my-release.yml --repo chenyahui/jant --ref my-release
 
 工作流构建触发时 `my-release` 的最新提交。合并或推送分支不会触发发布。
 服务器架构为 x86_64，因此只构建 `linux/amd64` 镜像。流程先运行现有的 Docker Compose 启动检查，通过后发布镜像。
-镜像发布后，流程自动部署到 [Jant 测试环境](https://jant.cyhone.com)，并检查 HTTPS 就绪状态。
+镜像发布后，流程自动部署到 [Jant 正式站点](https://jant.cyhone.com)，并检查 HTTPS 就绪状态。
 工作流使用仓库级 Actions Secrets `TCR_USERNAME` 和 `TCR_PASSWORD` 登录腾讯云 TCR 个人版。
 `TCR_USERNAME` 填腾讯云「登录实例」显示的账号 ID，`TCR_PASSWORD` 填该账号的镜像仓库登录密码。
 
@@ -170,41 +170,41 @@ mise run docker-pull
 mise run docker-up
 ```
 
-这组命令用于自行运行仓库中的通用 Compose 配置。测试服务器使用下文的独立配置。
+这组命令用于自行运行仓库中的通用 Compose 配置。正式服务器使用下文的独立配置。
 需要固定版本时，可将 `latest` 替换为对应的日期与提交号标签。回退前先确认数据库兼容性；
 如果新版本已迁移数据库，可能还需要恢复升级前的数据备份。
 
 发布失败时，可以在 GitHub Actions 重跑同一次发布。
 
-### 测试服务器
+### 正式服务器
 
-测试环境位于 `193.112.18.149`，域名 `jant.cyhone.com` 的 A 记录指向该地址。
+正式环境位于 `193.112.18.149`，目前使用的域名为 `jant.cyhone.com`。
 Caddy 处理 HTTPS 和证书续期，Jant 容器只监听服务器的 `127.0.0.1:3000`。
 
-GitHub Environment `jant-test` 只允许 `my-release` 分支部署，包含：
+GitHub Environment `jant-production` 只允许 `my-release` 分支部署，包含：
 
 | 类型     | 名称                 | 用途                                |
 | -------- | -------------------- | ----------------------------------- |
 | Secret   | `DEPLOY_SSH_KEY`     | 专用部署私钥                        |
 | Secret   | `DEPLOY_KNOWN_HOSTS` | 经已有 SSH 连接核验的服务器主机公钥 |
-| Variable | `DEPLOY_HOST`        | 测试服务器地址                      |
+| Variable | `DEPLOY_HOST`        | 正式服务器地址                      |
 
 部署公钥在服务器的 `authorized_keys` 中使用 `restrict` 和固定命令，不能开启交互式终端、转发端口或执行任意命令。
 入口只接受 `ccr.ccs.tencentyun.com/chenyahui/jant-my-release@sha256:…`，部署本次任务产出的镜像摘要。
 
 服务器配置的源文件位于 `scripts/my-release/`，由管理员安装为 root 所有：
 
-| 源文件         | 服务器路径                         |
-| -------------- | ---------------------------------- |
-| `compose.yml`  | `/opt/jant-test/compose.yml`       |
-| `Caddyfile`    | `/etc/caddy/Caddyfile`             |
-| `ssh-entry.sh` | `/usr/local/bin/jant-test-ssh`     |
-| `deploy.sh`    | `/usr/local/sbin/jant-test-deploy` |
+| 源文件         | 服务器路径                               |
+| -------------- | ---------------------------------------- |
+| `compose.yml`  | `/opt/jant-production/compose.yml`       |
+| `Caddyfile`    | `/etc/caddy/Caddyfile`                   |
+| `ssh-entry.sh` | `/usr/local/bin/jant-production-ssh`     |
+| `deploy.sh`    | `/usr/local/sbin/jant-production-deploy` |
 
 修改这些文件后，需要通过管理员 SSH 会话更新对应服务器文件；受限部署密钥不能修改部署脚本。
-站点配置在 `/opt/jant-test/.env`，数据库和媒体在 `/opt/jant-test/data/`，部署记录在 `/opt/jant-test/current-image`。
-更新前先拉取镜像，再暂停写入，把配置和数据一同备份到 `/opt/jant-test/backups/`，然后迁移并启动。
+站点配置在 `/opt/jant-production/.env`，数据库和媒体在 `/opt/jant-production/data/`，部署记录在 `/opt/jant-production/current-image`。
+更新前先拉取镜像，再暂停写入，把配置和数据一同备份到 `/opt/jant-production/backups/`，然后迁移并启动。
 备份包含密钥，仅 root 可读；当前不自动删除备份，需要按磁盘使用情况另行清理。
 
-首次部署在公开服务启动前创建管理员，初始登录信息保存在服务器的 `/home/jant/jant-test-credentials.txt`，
+首次部署在公开服务启动前创建管理员，初始登录信息保存在服务器的 `/home/jant/jant-production-credentials.txt`，
 仅 `jant` 用户和 root 可读。搜索引擎索引由站点后台「常规 → 站点可见性」控制。

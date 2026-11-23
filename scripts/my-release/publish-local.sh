@@ -6,7 +6,7 @@ usage() {
   printf '%s\n' 'Usage: bash scripts/my-release/publish-local.sh [--login] [--deploy [ssh-key]]' \
     'Build the checked-out my-release commit for linux/amd64 and push it to TCR.' \
     'Use --login to log in with TCR_USERNAME and TCR_PASSWORD from the environment.' \
-    'Use --deploy to update the test site with the default SSH identity or a restricted deployment key.'
+    'Use --deploy to update the production site with the default SSH identity or a restricted deployment key.'
 }
 
 fail() {
@@ -127,11 +127,11 @@ if [[ "$deploy" == true ]]; then
     ssh_options+=(-i "$deploy_key" -o IdentitiesOnly=yes)
     deploy_command="$image_ref"
   else
-    deploy_command="sudo -n /usr/local/sbin/jant-test-deploy $image_ref"
+    deploy_command="sudo -n /usr/local/sbin/jant-production-deploy $image_ref"
   fi
 
   if [[ -z "$registry_password" ]]; then
-    IFS= read -rs -p 'TCR password for test deployment: ' registry_password
+    IFS= read -rs -p 'TCR password for production deployment: ' registry_password
     printf '\n' >&2
     [[ -n "$registry_password" ]] || fail "Enter the TCR password to deploy."
   fi

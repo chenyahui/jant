@@ -1,4 +1,4 @@
-name: jant-test
+name: jant-production
 
 services:
   jant-migrate:

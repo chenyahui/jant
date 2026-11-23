@@ -36,7 +36,7 @@ if [[ $(git rev-parse "$previous^{tree}") == "$(git rev-parse 'HEAD^{tree}')" ]]
 fi
 
 git --no-pager diff --stat "$previous" HEAD --
-if [[ -t 0 ]] && read -r -p 'Deploy my-release to the test environment? [y/N] ' answer; then
+if [[ -t 0 ]] && read -r -p 'Deploy my-release to production? [y/N] ' answer; then
   case "$answer" in
     [yY]|[yY][eE][sS]) exec make deploy ;;
   esac

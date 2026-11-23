@@ -102,11 +102,11 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   deploy:
-    name: Deploy test environment
+    name: Deploy to production
     needs: publish
     runs-on: ubuntu-latest
     environment:
-      name: jant-test
+      name: jant-production
       url: https://jant.cyhone.com
     steps:
       - name: Deploy the published image over SSH
@@ -144,7 +144,7 @@ jobs:
           DIGEST: ${{ needs.publish.outputs.digest }}
         run: |
           {
-            echo '## Test environment'
+            echo '## Production deployment'
             echo
             echo '- URL: https://jant.cyhone.com'
             echo "- Version: ${VERSION}"
