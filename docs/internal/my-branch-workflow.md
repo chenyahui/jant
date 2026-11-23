@@ -207,4 +207,4 @@ GitHub Environment `jant-test` 只允许 `my-release` 分支部署，包含：
 备份包含密钥，仅 root 可读；当前不自动删除备份，需要按磁盘使用情况另行清理。
 
 首次部署在公开服务启动前创建管理员，初始登录信息保存在服务器的 `/home/jant/jant-test-credentials.txt`，
-仅 `jant` 用户和 root 可读。站点启用 `NOINDEX=true`，避免测试内容被搜索引擎收录。
+仅 `jant` 用户和 root 可读。搜索引擎索引由站点后台「常规 → 站点可见性」控制。
