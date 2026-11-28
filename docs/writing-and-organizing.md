@@ -359,7 +359,7 @@ Jant uses some top-level paths itself, such as `archive`, `feed`, and `search`, 
 
 If an older site already uses `/preview` as a post or custom URL, that stored record is left unchanged but the old link becomes a 404. Older custom URLs below that prefix also stop resolving as custom URLs because the whole namespace now belongs to authenticated previews. Jant doesn't generate a replacement slug or redirect; edit the conflicting post or custom URL yourself if you want a new public address.
 
-Custom paths can only contain lowercase letters, digits, hyphens (`-`), slashes (`/`), and dots (`.`). The first character must be a letter or digit.
+Custom paths can only contain lowercase letters, digits, hyphens (`-`), underscores (`_`), slashes (`/`), and dots (`.`). The first character must be a letter or digit.
 
 ## Quick entry point
 

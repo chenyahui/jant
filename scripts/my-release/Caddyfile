@@ -1,3 +1,25 @@
+(jant_upstream) {
+	reverse_proxy 127.0.0.1:3000 {
+		header_up -Forwarded
+		header_up -X-Forwarded-Port
+	}
+}
+
+cyhone.com {
+	import jant_upstream
+}
+
+www.cyhone.com {
+	redir https://cyhone.com{uri} 308
+}
+
 jant.cyhone.com {
-	reverse_proxy 127.0.0.1:3000
+	@compatibility path_regexp ^(/api/|/\.well-known/oauth-|/readyz$)|/feed/?$
+	handle @compatibility {
+		import jant_upstream
+	}
+
+	handle {
+		redir https://cyhone.com{uri} 308
+	}
 }

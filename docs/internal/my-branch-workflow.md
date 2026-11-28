@@ -145,7 +145,7 @@ gh workflow run docker-my-release.yml --repo chenyahui/jant --ref my-release
 
 工作流构建触发时 `my-release` 的最新提交。合并或推送分支不会触发发布。
 服务器架构为 x86_64，因此只构建 `linux/amd64` 镜像。流程先运行现有的 Docker Compose 启动检查，通过后发布镜像。
-镜像发布后，流程自动部署到 [Jant 正式站点](https://jant.cyhone.com)，并检查 HTTPS 就绪状态。
+镜像发布后，流程自动部署到 [Jant 正式站点](https://cyhone.com)，并检查 HTTPS 就绪状态。
 工作流使用仓库级 Actions Secrets `TCR_USERNAME` 和 `TCR_PASSWORD` 登录腾讯云 TCR 个人版。
 `TCR_USERNAME` 填腾讯云「登录实例」显示的账号 ID，`TCR_PASSWORD` 填该账号的镜像仓库登录密码。
 
@@ -178,8 +178,17 @@ mise run docker-up
 
 ### 正式服务器
 
-正式环境位于 `193.112.18.149`，目前使用的域名为 `jant.cyhone.com`。
+正式环境位于 `193.112.18.149`，主域名为 `cyhone.com`。
 Caddy 处理 HTTPS 和证书续期，Jant 容器只监听服务器的 `127.0.0.1:3000`。
+`www.cyhone.com` 和 `jant.cyhone.com` 的网页请求跳转到主域名，并保留路径和查询参数。
+旧子域名的 Feed、API 和就绪检查仍由 Jant 处理，已有订阅的条目 ID 因此保持一致。
+服务器通过 Caddy 转发的请求识别域名，`.env` 保留 `TRUST_PROXY=true`。
+
+旧订阅地址 `/atom.xml` 通过 Jant 的自定义 URL 永久重定向到 `/feed`。
+已迁入 Jant 的内容需要兼容旧链接时，在 Jant 的「设置 → 高级 → 自定义 URL」中添加永久重定向。
+DNSPod 中 `@` 和 `www` 都指向 `jant.cyhone.com`，由该子域名的 A 记录指向服务器。
+切换前的 Caddy 配置和站点环境配置保存在 `/opt/jant-production/backups/domain-20261127T142501/`。
+如需恢复旧博客，先恢复主域名和 `www` 的原 EdgeOne CNAME，再还原服务器配置。
 
 GitHub Environment `jant-production` 只允许 `my-release` 分支部署，包含：
 

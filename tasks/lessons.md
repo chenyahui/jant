@@ -1317,3 +1317,9 @@ btn-outline"` compiles, passes every test, and only shows up as a button whose
   changes the post's DOM, run the shared enhancement in `prepareShareCard`
   before measuring the card. Download the PNG through the share dialog to
   verify the captured result.
+
+## Search the destination by title when a legacy path returns 404
+
+During a site migration, search the destination by exact title and a distinctive fragment, then verify the result against the original before declaring an article missing. A matching article under a new permalink needs a permanent redirect from the old path.
+
+For old links that point to content already in Jant, save the redirect in Jant's Custom URLs and verify it before removing a proxy rule.

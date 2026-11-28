@@ -15,6 +15,22 @@ function setup() {
 }
 
 describe("Custom URLs API", () => {
+  it("creates a redirect for a legacy path containing underscores", async () => {
+    const { post } = setup();
+    const res = await post({
+      path: "/articles/enable_shared_from_this",
+      targetType: "redirect",
+      toPath: "/enable-shared-from-this",
+    });
+
+    expect(res.status).toBe(201);
+    expect(await res.json()).toMatchObject({
+      path: "/articles/enable_shared_from_this",
+      toPath: "/enable-shared-from-this",
+      redirectType: 301,
+    });
+  });
+
   it("takes a post by slug or by ID, and answers with the ID and a leading slash", async () => {
     const { services, post } = setup();
     const target = await services.posts.create({

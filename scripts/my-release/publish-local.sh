@@ -135,8 +135,8 @@ if [[ "$deploy" == true ]]; then
     printf '\n' >&2
     [[ -n "$registry_password" ]] || fail "Enter the TCR password to deploy."
   fi
-  printf 'Deploying %s to jant.cyhone.com\n' "$image_ref"
+  printf 'Deploying %s to cyhone.com\n' "$image_ref"
   printf '%s\n%s' "$TCR_USERNAME" "$registry_password" | ssh "${ssh_options[@]}" jant@193.112.18.149 "$deploy_command"
-  curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors --max-time 30 https://jant.cyhone.com/readyz
+  curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors --max-time 30 https://cyhone.com/readyz
   printf '\n'
 fi

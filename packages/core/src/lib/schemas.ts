@@ -317,9 +317,9 @@ const PathIdSchema = createTypeIdSchema(ID_PREFIX.path);
  * letter or digit because a first segment that starts with `_` or `.` belongs
  * to Jant (`isReservedPath`).
  */
-const AUTHOR_PATH_PATTERN = /^[a-z0-9][a-z0-9\-/.]*$/;
+const AUTHOR_PATH_PATTERN = /^[a-z0-9][a-z0-9_\-/.]*$/;
 const AUTHOR_PATH_MESSAGE =
-  "Path must start with a letter or digit and contain only lowercase letters, digits, hyphens, slashes, and dots";
+  "Path must start with a letter or digit and contain only lowercase letters, digits, hyphens, underscores, slashes, and dots";
 
 /**
  * Base post fields (shared between create and update schemas)
